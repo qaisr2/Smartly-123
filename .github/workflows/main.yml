@@ -20,15 +20,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.13'
+          gradle-version: '9.3.1'
 
       - name: Extract project from zip
         run: |
           mkdir -p extracted
           unzip -q ./*.zip -d extracted
-          echo "Extracted files:"
-          find extracted -maxdepth 3 | head -n 60
-
           SETTINGS=$(find extracted -maxdepth 3 \( -name settings.gradle -o -name settings.gradle.kts \) | head -n 1)
           if [ -z "$SETTINGS" ]; then
             echo "settings.gradle not found inside zip"
