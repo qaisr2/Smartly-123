@@ -1,0 +1,60 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Extract project from zip
+        run: |
+          mkdir -p extracted
+          unzip -q ./*.zip -d extracted
+          echo "Extracted files:"
+          find extracted -maxdepth 3 | head -n 60
+
+          SETTINGS=$(find extracted -maxdepth 3 \( -name settings.gradle -o -name settings.gradle.kts \) | head -n 1)
+          if [ -z "$SETTINGS" ]; then
+            echo "settings.gradle not found inside zip"
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$SETTINGS")
+          echo "Project dir: $PROJECT_DIR"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+
+      - name: Build Android APK
+        run: |
+          cd "$PROJECT_DIR"
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+            ./gradlew assembleDebug --stacktrace
+          else
+            gradle assembleDebug --stacktrace
+          fi
+
+      - name: List generated APKs
+        if: always()
+        run: find . -name "*.apk" -type f
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Smart-123-APK
+          path: 'extracted/**/build/outputs/apk/debug/*.apk'
+          if-no-files-found: error
