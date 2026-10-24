@@ -35,6 +35,18 @@ jobs:
           echo "Project dir: $PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
 
+      - name: Apply my edited files
+        run: |
+          DICT_FILE=$(find extracted -name OfflineDictionary.kt -not -path "*/build/*" | head -n 1)
+          VM_FILE=$(find extracted -name MainViewModel.kt -not -path "*/build/*" | head -n 1)
+          MANIFEST=$(find extracted -name AndroidManifest.xml -path "*src/main*" | head -n 1)
+          echo "Dictionary: $DICT_FILE"
+          echo "ViewModel: $VM_FILE"
+          echo "Manifest: $MANIFEST"
+          cp OnlineDictionary.kt "$(dirname "$DICT_FILE")/OnlineDictionary.kt"
+          cp MainViewModel.kt "$VM_FILE"
+          grep -q "android.permission.INTERNET" "$MANIFEST" || sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET" />\n    <application|' "$MANIFEST"
+
       - name: Create debug keystore
         run: |
           keytool -genkeypair -v \
